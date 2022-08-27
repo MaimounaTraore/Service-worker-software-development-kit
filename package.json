@@ -1,0 +1,24 @@
+{
+  "name": "o-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "dist/**"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "idb": "^7.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
