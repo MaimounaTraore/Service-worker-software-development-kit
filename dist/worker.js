@@ -15,6 +15,7 @@ class OServiceWorker {
     static run() {
         OServiceWorker.open();
         addEventListener('install', OServiceWorker.onInstalled);
+        addEventListener('activate', OServiceWorker.onActivate);
         addEventListener('fetch', OServiceWorker.onFetched);
         addEventListener('message', OServiceWorker.onMessage);
     }
@@ -150,6 +151,7 @@ OServiceWorker.data = [];
 OServiceWorker.STORE_KEY = 'o-worker-logs';
 OServiceWorker.SERVER_URL = 'http://192.168.1.6:3000/test';
 OServiceWorker.onInstalled = (event) => {
+    console.log('OWorker onInstalling...');
     self.skipWaiting();
     // event.waitUntil(
     //     caches.open('v0.1').then((cache) => {
@@ -168,6 +170,10 @@ OServiceWorker.onInstalled = (event) => {
     //     })
     // );
 };
+OServiceWorker.onActivate = (event) => {
+    console.log('OWorker ready to handle fetches!');
+    self.clients.claim();
+};
 OServiceWorker.onFetched = (event) => {
     // event.respondWith(
     //     caches.match(event.request).then((matchResponse) => {
@@ -185,7 +191,7 @@ OServiceWorker.onFetched = (event) => {
     event.respondWith(OServiceWorker.fetchWithParamAddedToRequestBody(event.request));
 };
 OServiceWorker.onMessage = (event) => {
-    console.log('onMessage...', event);
+    console.log('onMessage123', event);
     OServiceWorker.SERVER_URL = event.data.url;
 };
 OServiceWorker.fetchWithParamAddedToRequestBody = function (request) {

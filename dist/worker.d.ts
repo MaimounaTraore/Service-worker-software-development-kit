@@ -19,6 +19,7 @@ declare class OServiceWorker {
     private static createObjectStore;
     private static open;
     static onInstalled: (event: any) => void;
+    static onActivate: (event: any) => void;
     static onFetched: (event: any) => void;
     static onMessage: (event: any) => void;
     private static fetchWithParamAddedToRequestBody;

@@ -19,6 +19,7 @@ class OServiceWorker {
     public static run(): void {
       OServiceWorker.open();
       addEventListener('install', OServiceWorker.onInstalled);
+      addEventListener('activate', OServiceWorker.onActivate);
       addEventListener('fetch', OServiceWorker.onFetched);
       addEventListener('message', OServiceWorker.onMessage);
     }
@@ -147,6 +148,7 @@ class OServiceWorker {
   }
 
     public static onInstalled = (event: any): void => {
+      console.log('OWorker onInstalling...');
         (self as any).skipWaiting();
         // event.waitUntil(
         //     caches.open('v0.1').then((cache) => {
@@ -164,6 +166,10 @@ class OServiceWorker {
         //         ]);
         //     })
         // );
+    }
+    public static onActivate = (event: any): void => {
+      console.log('OWorker ready to handle fetches!');
+      (self as any).clients.claim();
     }
 
     public static onFetched = (event: any): void => {
@@ -185,7 +191,7 @@ class OServiceWorker {
           );
     }
     public static onMessage = (event: any): void => {
-        console.log('onMessage...', event);
+        console.log('onMessage123', event);
         OServiceWorker.SERVER_URL = event.data.url;
     }
     private static fetchWithParamAddedToRequestBody = function(request: any): Promise<any> {
