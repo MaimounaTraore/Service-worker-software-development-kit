@@ -13,7 +13,7 @@ class OServiceWorker {
   toRestores: any = {};
   static data: OError[] = [];
   private static STORE_KEY = 'o-worker-logs';
-  private static SERVER_URL = 'http://192.168.1.6:3000/test';
+  private static SERVER_URL = 'http://10.172.1.162:32323/api/v1/elk/logs';
   static _db: IDBDatabase;
 
     public static run(): void {
@@ -267,29 +267,4 @@ class OServiceWorker {
 
 }
 OServiceWorker.run();
-
-//SENDING TO THE SERVER 
-//   async function sendToServer(){
-//     console.log(errList);
-//     if(errList.length > 0){
-//       try {
-//         let response = await fetch('http://192.168.1.6:3000/test', { 
-//             method: 'POST',
-//             headers: {
-//               'Content-Type': 'application/json;charset=utf-8'
-//             },
-//             mode: 'cors',
-//             body: JSON.stringify(errList)
-//           });
-//           console.log(response);
-//         if(response.status === 200){
-//           errList=[];
-//         } else{
-//           console.log("Sorry, server not available!", response);
-//         }
-//       } catch (error) {
-//         console.log(error);
-//       }
-//   }
-// }
 
