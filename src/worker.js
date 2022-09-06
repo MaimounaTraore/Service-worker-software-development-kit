@@ -1,10 +1,14 @@
   const list =[];
   let errList = [];
 
+  //This two arrays are to contain succeeded and failed requests
+
   self.addEventListener('install', function(event) 
   {
     self.skipWaiting();
   })
+
+  //For the skipwaiting part
   
   self.addEventListener('fetch', function(event) {
     console.log('before....', event);
@@ -13,7 +17,7 @@
       console.log(errList); 
       return;
     }
-
+//This one right here is is fetcjhing ant event but the ones of the type precised in the if parentheses
     console.log(event);
     
     event.respondWith(
@@ -48,6 +52,7 @@
         console.log(val, request);
       });
     }
+    //
 
     function serialize(request) {
       var headers = {};

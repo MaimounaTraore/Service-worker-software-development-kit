@@ -1,10 +1,12 @@
 interface OError {
-  'timestamps': Date[];
+  'timestamps': string;
   'count': number;
   'msisdn': string;
   'type': string;
   'url': string;
   'id': number;
+  'periode': string;
+  'extra': string;
 }
 
 type OErrorType = 'SERVER_ERROR'| 'FETCH_ERROR';
@@ -34,7 +36,7 @@ class OServiceWorker {
     //   }
     // }
 
-    private static async sendToServer(){//I added asynch because i added await
+    private static async sendToServer(){//I added asynch because i added await below
       console.log(OServiceWorker.data);
       if(OServiceWorker.data.length > 0){
         try {
@@ -63,14 +65,20 @@ class OServiceWorker {
       let err: any = this.data.find(elt => (new RegExp(elt.url).test(req.url.replace(/\?.*/, ''))) && type === elt.type)
       if(err){
         err.count++;
-        err.timestamps.push(new Date());
+        if (!err.timestamps || err.timestamps === ''){
+            err.timestamps = OServiceWorker.formatDate(new Date(), true);
+        } else {
+          err.timestamps += ';' + OServiceWorker.formatDate(new Date(), true);
+        }
+       // err.timestamps.push(new Date());
       }else{
         err={
           // id: null,
           count: 1,
-          timestamps: [new Date()],
+          timestamps: OServiceWorker.formatDate(new Date(), true),
           url: req.url.replace(/\?.*/, ''),
           type: type,
+          periode: OServiceWorker.formatDate(new Date()),
         } 
         this.data.push(err);
       }
@@ -86,6 +94,15 @@ class OServiceWorker {
       onreq.onerror = (ev: any) => {
         console.log("Error could not be added......", ev);
       }
+    }
+
+    private static formatDate(date: Date, full = false) {
+      if(full){
+        return date.toLocaleString('en-CA', {year:'numeric', month:'numeric', day:
+      'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'});
+      }
+      return date.toLocaleString('en-CA', {year:'numeric', month:'numeric', day:
+      'numeric'});
     }
 
     private static async createObjectStore(storeName: any, options: IDBObjectStoreParameters, indexes: any) {
