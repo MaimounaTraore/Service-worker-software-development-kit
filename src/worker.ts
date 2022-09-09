@@ -1,12 +1,13 @@
 interface OError {
-  'timestamps': string;
   'count': number;
   'msisdn': string;
   'type': string;
   'url': string;
   'id': number;
-  'periode': string;
+  'periode': number;
   'extra': string;
+  'createdAt': number;
+  'updatedAt': number;
 }
 
 type OErrorType = 'SERVER_ERROR'| 'FETCH_ERROR';
@@ -65,20 +66,18 @@ class OServiceWorker {
       let err: any = this.data.find(elt => (new RegExp(elt.url).test(req.url.replace(/\?.*/, ''))) && type === elt.type)
       if(err){
         err.count++;
-        if (!err.timestamps || err.timestamps === ''){
-            err.timestamps = OServiceWorker.formatDate(new Date(), true);
-        } else {
-          err.timestamps += ';' + OServiceWorker.formatDate(new Date(), true);
-        }
-       // err.timestamps.push(new Date());
+        
+        err.updatedAt = new Date().getTime();
       }else{
+        const now = new Date()
         err={
           // id: null,
           count: 1,
-          timestamps: OServiceWorker.formatDate(new Date(), true),
           url: req.url.replace(/\?.*/, ''),
           type: type,
-          periode: OServiceWorker.formatDate(new Date()),
+          periode: now.getTime(),
+          updatedAt: now.getTime(),
+          createdAt: now.getTime()
         } 
         this.data.push(err);
       }
