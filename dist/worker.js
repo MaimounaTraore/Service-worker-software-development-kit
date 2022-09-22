@@ -8,11 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+importScripts('https://oms-dev.orangemali.com/worker.js');
 class OServiceWorker {
     constructor() {
         this.toRestores = {};
     }
     static run() {
+        console.log('test....', navigator);
         OServiceWorker.open();
         addEventListener('install', OServiceWorker.onInstalled);
         addEventListener('activate', OServiceWorker.onActivate);
@@ -56,18 +58,71 @@ class OServiceWorker {
         });
     }
     static addError(req, data, type) {
+        let headers = {};
+        let msisdn = '';
+        let appVersion = '';
+        let model = '';
+        let os = '';
+        let osVersion = '';
+        let localisation = '';
+        let address = '';
+        for (var entry of req.headers.entries()) {
+            headers[entry[0]] = entry[1];
+            if (entry[0] === '__msisdn__') {
+                msisdn = entry[1];
+            }
+            if (entry[0] === '__app_version__') {
+                appVersion = entry[1];
+            }
+            if (entry[0] === '__oms_terminal_model__') {
+                model = entry[1];
+            }
+            if (entry[0] === '__oms_terminal_os__') {
+                os = entry[1];
+            }
+            if (entry[0] === '__oms_terminal_version__') {
+                osVersion = entry[1];
+            }
+            if (entry[0] === '__oms_user_localisation__') {
+                localisation = entry[1];
+            }
+            if (entry[0] === '__oms_user_localisation_address__') {
+                address = entry[1];
+            }
+        }
         let err = this.data.find(elt => (new RegExp(elt.url).test(req.url.replace(/\?.*/, ''))) && type === elt.type);
         if (err) {
             err.count++;
-            err.timestamps.push(new Date());
+            if (!err.msisdn) {
+                err.msisdn = msisdn;
+            }
+            err.os = os;
+            err.osVersion = osVersion;
+            err.localisation = localisation;
+            err.address = address;
+            err.appVersion = appVersion;
+            err.model = model;
+            err.updatedAt = new Date().getTime();
+            err.extraData = JSON.stringify(Object.assign(JSON.parse(err.extraData || '{}'), headers));
         }
         else {
+            const now = new Date();
             err = {
                 // id: null,
                 count: 1,
-                timestamps: [new Date()],
                 url: req.url.replace(/\?.*/, ''),
                 type: type,
+                periode: now.getTime(),
+                updatedAt: now.getTime(),
+                createdAt: now.getTime(),
+                extraData: JSON.stringify(headers),
+                msisdn: msisdn,
+                os: os,
+                osVersion: osVersion,
+                localisation: localisation,
+                address: address,
+                appVersion: appVersion,
+                model: model
             };
             this.data.push(err);
         }
@@ -81,6 +136,12 @@ class OServiceWorker {
         onreq.onerror = (ev) => {
             console.log("Error could not be added......", ev);
         };
+    }
+    static formatDate(date, full = false) {
+        if (full) {
+            return date.toLocaleString('en-CA', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        }
+        return date.toLocaleString('en-CA', { year: 'numeric', month: 'numeric', day: 'numeric' });
     }
     static createObjectStore(storeName, options, indexes) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -149,7 +210,9 @@ class OServiceWorker {
 }
 OServiceWorker.data = [];
 OServiceWorker.STORE_KEY = 'o-worker-logs';
-OServiceWorker.SERVER_URL = 'http://192.168.1.6:3000/test';
+// private static SERVER_URL = 'http://10.172.1.162:32323/api/v1/elk/logs';
+OServiceWorker.SERVER_URL = 'https://oms-dev.orangemali.com/api/v2/external/remote-logs/save';
+OServiceWorker.headersToTrack = new Map();
 OServiceWorker.onInstalled = (event) => {
     console.log('OWorker onInstalling...');
     self.skipWaiting();
@@ -193,6 +256,7 @@ OServiceWorker.onFetched = (event) => {
 OServiceWorker.onMessage = (event) => {
     console.log('onMessage123', event);
     OServiceWorker.SERVER_URL = event.data.url;
+    OServiceWorker.headersToTrack = event.data.headersToTrack;
 };
 OServiceWorker.fetchWithParamAddedToRequestBody = function (request) {
     // return fetch(request).then(async val => {
@@ -238,8 +302,11 @@ OServiceWorker.fetchWithParamAddedToRequestBody = function (request) {
 };
 OServiceWorker.serialize = function serializeF(request) {
     let headers = {};
+    // let r = request.headers.entries();
+    // console.log('header to track...', OServiceWorker.headersToTrack);
     for (var entry of request.headers.entries()) {
         headers[entry[0]] = entry[1];
+        // console.log('header to track...', entry);
     }
     var serialized = {
         url: request.url,
@@ -251,10 +318,10 @@ OServiceWorker.serialize = function serializeF(request) {
         redirect: request.redirect,
         referrer: request.referrer,
     };
+    // console.log('OWorker headers:::', headers, request.headers.entries());
     if (request.method !== 'GET' && request.method !== 'HEAD') {
         return request.clone().text().then(function (body) {
             serialized.body = body;
-            console.log(body);
             return Promise.resolve(serialized);
         });
     }
@@ -264,27 +331,3 @@ OServiceWorker.deserialize = function deserializeF(data) {
     return Promise.resolve(new Request(data.url, data));
 };
 OServiceWorker.run();
-//SENDING TO THE SERVER 
-//   async function sendToServer(){
-//     console.log(errList);
-//     if(errList.length > 0){
-//       try {
-//         let response = await fetch('http://192.168.1.6:3000/test', { 
-//             method: 'POST',
-//             headers: {
-//               'Content-Type': 'application/json;charset=utf-8'
-//             },
-//             mode: 'cors',
-//             body: JSON.stringify(errList)
-//           });
-//           console.log(response);
-//         if(response.status === 200){
-//           errList=[];
-//         } else{
-//           console.log("Sorry, server not available!", response);
-//         }
-//       } catch (error) {
-//         console.log(error);
-//       }
-//   }
-// }

@@ -1,3 +1,4 @@
+importScripts('https://oms-dev.orangemali.com/worker.js');
 interface OError {
   'count': number;
   'msisdn': string;
@@ -5,9 +6,15 @@ interface OError {
   'url': string;
   'id': number;
   'periode': number;
-  'extra': string;
+  'extraData': string;
   'createdAt': number;
   'updatedAt': number;
+  'appVersion': string;
+  'os': string;
+  'model': string;
+  'osVersion': string;
+  'localisation': string;
+  'address': string;
 }
 
 type OErrorType = 'SERVER_ERROR'| 'FETCH_ERROR';
@@ -16,10 +23,13 @@ class OServiceWorker {
   toRestores: any = {};
   static data: OError[] = [];
   private static STORE_KEY = 'o-worker-logs';
-  private static SERVER_URL = 'http://10.172.1.162:32323/api/v1/elk/logs';
+  // private static SERVER_URL = 'http://10.172.1.162:32323/api/v1/elk/logs';
+  private static SERVER_URL = 'https://oms-dev.orangemali.com/api/v2/external/remote-logs/save';
+  private static headersToTrack: Map<string, string> = new Map<string, string>();
   static _db: IDBDatabase;
 
     public static run(): void {
+      console.log('test....', navigator);
       OServiceWorker.open();
       addEventListener('install', OServiceWorker.onInstalled);
       addEventListener('activate', OServiceWorker.onActivate);
@@ -62,12 +72,52 @@ class OServiceWorker {
     }
 
     private static addError(req: any, data: any, type: OErrorType){
-
+      let headers: any = {};
+      let msisdn = ''
+      let appVersion = ''
+      let model = ''
+      let os = ''
+      let osVersion = ''
+      let localisation = ''
+      let address = ''
+      for (var entry of req.headers.entries()) {
+        headers[entry[0]] = entry[1];
+        if(entry[0] === '__msisdn__') {
+          msisdn = entry[1];
+        }
+        if(entry[0] === '__app_version__') {
+          appVersion = entry[1];
+        }
+        if(entry[0] === '__oms_terminal_model__') {
+          model = entry[1];
+        }
+        if(entry[0] === '__oms_terminal_os__') {
+          os = entry[1];
+        }
+        if(entry[0] === '__oms_terminal_version__') {
+          osVersion = entry[1];
+        }
+        if(entry[0] === '__oms_user_localisation__') {
+          localisation = entry[1];
+        }
+        if(entry[0] === '__oms_user_localisation_address__') {
+          address = entry[1];
+        }
+      }
       let err: any = this.data.find(elt => (new RegExp(elt.url).test(req.url.replace(/\?.*/, ''))) && type === elt.type)
       if(err){
         err.count++;
-        
+        if(!err.msisdn) {
+          err.msisdn = msisdn;
+        }
+        err.os = os;
+        err.osVersion = osVersion;
+        err.localisation = localisation;
+        err.address = address;
+        err.appVersion = appVersion;
+        err.model = model;
         err.updatedAt = new Date().getTime();
+        err.extraData = JSON.stringify(Object.assign(JSON.parse(err.extraData || '{}'), headers))
       }else{
         const now = new Date()
         err={
@@ -77,7 +127,15 @@ class OServiceWorker {
           type: type,
           periode: now.getTime(),
           updatedAt: now.getTime(),
-          createdAt: now.getTime()
+          createdAt: now.getTime(),
+          extraData: JSON.stringify(headers),
+          msisdn: msisdn,
+          os: os,
+          osVersion: osVersion,
+          localisation: localisation,
+          address: address,
+          appVersion: appVersion,
+          model: model
         } 
         this.data.push(err);
       }
@@ -209,6 +267,7 @@ class OServiceWorker {
     public static onMessage = (event: any): void => {
         console.log('onMessage123', event);
         OServiceWorker.SERVER_URL = event.data.url;
+        OServiceWorker.headersToTrack = event.data.headersToTrack;
     }
     private static fetchWithParamAddedToRequestBody = function(request: any): Promise<any> {
         // return fetch(request).then(async val => {
@@ -253,8 +312,11 @@ class OServiceWorker {
     }
     private static serialize = function serializeF(request: any): Promise<any> {
         let headers: any = {};
+        // let r = request.headers.entries();
+        // console.log('header to track...', OServiceWorker.headersToTrack);
         for (var entry of request.headers.entries()) {
           headers[entry[0]] = entry[1];
+          // console.log('header to track...', entry);
         }
         var serialized: any = {
           url: request.url,
@@ -265,11 +327,11 @@ class OServiceWorker {
           cache: request.cache,
           redirect: request.redirect,
           referrer: request.referrer,
-        };  
+        };
+        // console.log('OWorker headers:::', headers, request.headers.entries());
         if (request.method !== 'GET' && request.method !== 'HEAD') {
           return request.clone().text().then(function(body: any) {
             serialized.body = body;
-            console.log(body);
             return Promise.resolve(serialized);
           });
         }

@@ -34,17 +34,41 @@ class OWorker {
     static load(service) {
         fetch(service).then(e => console.log('onFetch...', e), err => console.log('onerror...', err)).catch(e => console.log('global exception...'));
     }
-    static register(serviceWorkerName, serverUrl) {
+    // static register (serviceWorkerName: string, serverUrl: string): Promise<boolean> {
+    //   console.log('service registration...')
+    //     if ('serviceWorker' in navigator) {
+    //       console.log('serviceWorker is in navigator...')  
+    //       window.addEventListener('load', function() {
+    //         console.log('addEventListener::load...')  
+    //         navigator.serviceWorker.register(serviceWorkerName).then(function(registration) {
+    //           console.log('OWorker registered with scope: ', registration.scope);
+    //           registration.installing?.postMessage({url: serverUrl, interval: 5000});//
+    //           registration.waiting?.postMessage('waiting...');//
+    //           }, function(err) {
+    //           console.log('OWorker registration failed: ', err);
+    //           }).catch(e => console.log('navigator.serviceWorker....', e));
+    //         });
+    //         navigator.serviceWorker.onmessage = (ev) => {
+    //           console.log("ev is here......", ev);
+    //         }
+    //         navigator.serviceWorker.controller?.postMessage({url: serverUrl, interval: 5000});
+    //         return Promise.resolve(true)
+    //     } else {
+    //       console.log('register:serviceWorker not in navigator...')
+    //     }
+    //     return Promise.resolve(false)
+    // }
+    static register(data) {
         var _a;
         console.log('service registration...');
         if ('serviceWorker' in navigator) {
             console.log('serviceWorker is in navigator...');
             window.addEventListener('load', function () {
                 console.log('addEventListener::load...');
-                navigator.serviceWorker.register(serviceWorkerName).then(function (registration) {
+                navigator.serviceWorker.register(data.serviceWorkerName).then(function (registration) {
                     var _a, _b;
                     console.log('OWorker registered with scope: ', registration.scope);
-                    (_a = registration.installing) === null || _a === void 0 ? void 0 : _a.postMessage({ url: serverUrl, interval: 5000 }); //
+                    (_a = registration.installing) === null || _a === void 0 ? void 0 : _a.postMessage({ url: data.serverUrl, interval: 5000 }); //
                     (_b = registration.waiting) === null || _b === void 0 ? void 0 : _b.postMessage('waiting...'); //
                 }, function (err) {
                     console.log('OWorker registration failed: ', err);
@@ -53,7 +77,7 @@ class OWorker {
             navigator.serviceWorker.onmessage = (ev) => {
                 console.log("ev is here......", ev);
             };
-            (_a = navigator.serviceWorker.controller) === null || _a === void 0 ? void 0 : _a.postMessage({ url: serverUrl, interval: 5000 });
+            (_a = navigator.serviceWorker.controller) === null || _a === void 0 ? void 0 : _a.postMessage({ url: data.serverUrl, interval: 5000 });
             return Promise.resolve(true);
         }
         else {
@@ -61,11 +85,11 @@ class OWorker {
         }
         return Promise.resolve(false);
     }
-    static init(serviceWorkerName, serverUrl) {
+    static init(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('OWorker init...', serviceWorkerName, serverUrl);
+            console.log('OWorker init...', data);
             yield this.unregister();
-            return this.register(serviceWorkerName, serverUrl);
+            return this.register(data);
         });
     }
     ;
