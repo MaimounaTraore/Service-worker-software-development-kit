@@ -1,10 +1,13 @@
 interface OError {
-    'timestamps': Date[];
     'count': number;
     'msisdn': string;
     'type': string;
     'url': string;
     'id': number;
+    'periode': number;
+    'extra': string;
+    'createdAt': number;
+    'updatedAt': number;
 }
 declare type OErrorType = 'SERVER_ERROR' | 'FETCH_ERROR';
 declare class OServiceWorker {
@@ -16,6 +19,7 @@ declare class OServiceWorker {
     static run(): void;
     private static sendToServer;
     private static addError;
+    private static formatDate;
     private static createObjectStore;
     private static open;
     static onInstalled: (event: any) => void;

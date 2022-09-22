@@ -9,4 +9,5 @@ export declare class OWorker {
     private static fetchWithParamAddedToRequestBody;
     private static serialize;
     private static deserialize;
+    static Iosworker(): void;
 }

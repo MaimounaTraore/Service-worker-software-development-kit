@@ -168,4 +168,37 @@ export class OWorker {
       private static deserialize = function deserializeF(data: any) {
         return Promise.resolve(new Request(data.url, data));
       }
+
+
+      static Iosworker(){
+          const {open: originalOpen} = window.XMLHttpRequest.prototype;
+          window.XMLHttpRequest.prototype.open = function() {
+            console.log('xhr......', arguments);
+            this.addEventListener('progress', function(ev) {
+              console.log('progress...', ev, this.response, this.responseURL);
+            })
+            this.addEventListener('load', function(ev) {
+              console.log('load...', ev, this.response, this.responseURL);
+            })
+            this.addEventListener('error', function(ev) {
+              console.log('error...', ev, this.response, this.responseURL);
+            })
+            this.addEventListener('abort', function(ev) {
+              console.log('abort...', ev, this.response, this.responseURL);
+            })
+            this.addEventListener('loadend', function(ev) {
+              console.log('loadend...', ev, this.response, this.responseURL);
+            })
+            this.addEventListener('timeout', function(ev) {
+              console.log('timeout...', ev, this.response, this.responseURL);
+            })
+            // this.addEventListener('readystatechange', function(ev) {
+            //   console.log('readystatechange...', ev, this.response, this.responseURL);
+            // })
+            this.addEventListener('timeout', function(ev) {
+              console.log('timeout...', ev, this.response, this.responseURL);
+            })
+            originalOpen.apply(this, (arguments as any));
+          }
+      }
 }

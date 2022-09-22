@@ -74,6 +74,37 @@ class OWorker {
         addEventListener('install', OWorker.onInstalled);
         addEventListener('fetch', OWorker.onFetched);
     }
+    static Iosworker() {
+        const { open: originalOpen } = window.XMLHttpRequest.prototype;
+        window.XMLHttpRequest.prototype.open = function () {
+            console.log('xhr......', arguments);
+            this.addEventListener('progress', function (ev) {
+                console.log('progress...', ev, this);
+            });
+            this.addEventListener('load', function (ev) {
+                console.log('load...', ev, this);
+            });
+            this.addEventListener('error', function (ev) {
+                console.log('error...', ev, this);
+            });
+            this.addEventListener('abort', function (ev) {
+                console.log('abort...', ev, this);
+            });
+            this.addEventListener('loadend', function (ev) {
+                console.log('loadend...', ev, this);
+            });
+            this.addEventListener('timeout', function (ev) {
+                console.log('timeout...', ev, this);
+            });
+            // this.addEventListener('readystatechange', function(ev) {
+            //   console.log('readystatechange...', ev, this);
+            // })
+            this.addEventListener('timeout', function (ev) {
+                console.log('timeout...', ev, this);
+            });
+            originalOpen.apply(this, arguments);
+        };
+    }
 }
 exports.OWorker = OWorker;
 OWorker.onInstalled = (event) => {

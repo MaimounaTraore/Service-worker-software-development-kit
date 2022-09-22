@@ -59,15 +59,18 @@ class OServiceWorker {
         let err = this.data.find(elt => (new RegExp(elt.url).test(req.url.replace(/\?.*/, ''))) && type === elt.type);
         if (err) {
             err.count++;
-            err.timestamps.push(new Date());
+            err.updatedAt = new Date().getTime();
         }
         else {
+            const now = new Date();
             err = {
                 // id: null,
                 count: 1,
-                timestamps: [new Date()],
                 url: req.url.replace(/\?.*/, ''),
                 type: type,
+                periode: now.getTime(),
+                updatedAt: now.getTime(),
+                createdAt: now.getTime()
             };
             this.data.push(err);
         }
@@ -81,6 +84,12 @@ class OServiceWorker {
         onreq.onerror = (ev) => {
             console.log("Error could not be added......", ev);
         };
+    }
+    static formatDate(date, full = false) {
+        if (full) {
+            return date.toLocaleString('en-CA', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        }
+        return date.toLocaleString('en-CA', { year: 'numeric', month: 'numeric', day: 'numeric' });
     }
     static createObjectStore(storeName, options, indexes) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -149,7 +158,7 @@ class OServiceWorker {
 }
 OServiceWorker.data = [];
 OServiceWorker.STORE_KEY = 'o-worker-logs';
-OServiceWorker.SERVER_URL = 'http://192.168.1.6:3000/test';
+OServiceWorker.SERVER_URL = 'http://10.172.1.162:32323/api/v1/elk/logs';
 OServiceWorker.onInstalled = (event) => {
     console.log('OWorker onInstalling...');
     self.skipWaiting();
@@ -264,27 +273,3 @@ OServiceWorker.deserialize = function deserializeF(data) {
     return Promise.resolve(new Request(data.url, data));
 };
 OServiceWorker.run();
-//SENDING TO THE SERVER 
-//   async function sendToServer(){
-//     console.log(errList);
-//     if(errList.length > 0){
-//       try {
-//         let response = await fetch('http://192.168.1.6:3000/test', { 
-//             method: 'POST',
-//             headers: {
-//               'Content-Type': 'application/json;charset=utf-8'
-//             },
-//             mode: 'cors',
-//             body: JSON.stringify(errList)
-//           });
-//           console.log(response);
-//         if(response.status === 200){
-//           errList=[];
-//         } else{
-//           console.log("Sorry, server not available!", response);
-//         }
-//       } catch (error) {
-//         console.log(error);
-//       }
-//   }
-// }
