@@ -5,8 +5,7 @@ export class DbService {
     data: any;
     private static STORE_KEY = 'oms-logs';
     _db: any;
-    constructor() {
-    }
+    constructor() { }
     async open() {
         console.log('Opening OWorker DB', DbService.STORE_KEY);
         this._db = await openDB<IMDBShema>(DbService.STORE_KEY, 1, {

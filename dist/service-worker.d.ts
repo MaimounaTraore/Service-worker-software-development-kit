@@ -1,4 +1,5 @@
 export declare class OWorker {
+    private static data;
     static unregister(): Promise<boolean>;
     static load(service: any): void;
     static register(data: {

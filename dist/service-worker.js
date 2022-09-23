@@ -63,14 +63,14 @@ class OWorker {
         console.log('service registration...');
         if ('serviceWorker' in navigator) {
             console.log('serviceWorker is in navigator...');
-            window.addEventListener('load', function () {
+            window.addEventListener('load', () => {
                 console.log('addEventListener::load...');
-                navigator.serviceWorker.register(data.serviceWorkerName).then(function (registration) {
+                navigator.serviceWorker.register(data.serviceWorkerName).then((registration) => {
                     var _a, _b;
                     console.log('OWorker registered with scope: ', registration.scope);
                     (_a = registration.installing) === null || _a === void 0 ? void 0 : _a.postMessage({ url: data.serverUrl, interval: 5000 }); //
                     (_b = registration.waiting) === null || _b === void 0 ? void 0 : _b.postMessage('waiting...'); //
-                }, function (err) {
+                }, (err) => {
                     console.log('OWorker registration failed: ', err);
                 }).catch(e => console.log('navigator.serviceWorker....', e));
             });
@@ -100,45 +100,131 @@ class OWorker {
     }
     static Iosworker() {
         const { open: originalOpen } = window.XMLHttpRequest.prototype;
-        const { send: originalSend } = window.XMLHttpRequest.prototype;
+        const { setRequestHeader: originalSetRequestHeader } = window.XMLHttpRequest.prototype;
+        let error = {};
         window.XMLHttpRequest.prototype.open = function () {
-            console.log('xhr......', arguments);
-            this.addEventListener('progress', function (ev) {
-                console.log('progress...', this.response, this.responseURL);
-            });
+            console.log('xhr......', OWorker.data);
+            error.url = arguments[1];
             this.addEventListener('load', function (ev) {
-                console.log('load...', this.response, this.responseURL);
+                console.log('load...', OWorker.data);
             });
             this.addEventListener('error', function (ev) {
-                console.log('error...', this.response, this.responseURL);
+                error.type = 'FETCH_ERROR';
+                let err = OWorker.data.find(elt => (new RegExp(elt.url).test(error.url.replace(/\?.*/, ''))) && 'FETCH_ERROR' === elt.type);
+                if (err) {
+                    err.count++;
+                    if (!err.msisdn) {
+                        err.msisdn = error.msisdn;
+                    }
+                    err.os = error.os;
+                    err.osVersion = error.osVersion;
+                    err.localisation = error.localisation;
+                    err.address = error.address;
+                    err.appVersion = error.appVersion;
+                    err.model = error.model;
+                    err.updatedAt = new Date().getTime();
+                }
+                else {
+                    const now = new Date();
+                    err = {
+                        // id: null,
+                        count: 1,
+                        url: error.url.replace(/\?.*/, ''),
+                        type: 'FETCH_ERROR',
+                        periode: now.getTime(),
+                        updatedAt: now.getTime(),
+                        createdAt: now.getTime(),
+                        msisdn: error.msisdn,
+                        os: error.os,
+                        osVersion: error.osVersion,
+                        localisation: error.localisation,
+                        address: error.address,
+                        appVersion: error.appVersion,
+                        model: error.model
+                    };
+                    OWorker.data.push(err);
+                }
+                console.log('error...', OWorker.data);
             });
             this.addEventListener('abort', function (ev) {
-                console.log('abort...', this.response, this.responseURL);
-            });
-            this.addEventListener('loadend', function (ev) {
-                console.log('loadend...', this.response, this.responseURL);
+                console.log('abort...', OWorker.data);
             });
             this.addEventListener('timeout', function (ev) {
-                console.log('timeout...', this.response, this.responseURL);
+                error.type = 'FETCH_ERROR';
+                let err = OWorker.data.find(elt => (new RegExp(elt.url).test(error.url.replace(/\?.*/, ''))) && 'FETCH_ERROR' === elt.type);
+                if (err) {
+                    err.count++;
+                    if (!err.msisdn) {
+                        err.msisdn = error.msisdn;
+                    }
+                    err.os = error.os;
+                    err.osVersion = error.osVersion;
+                    err.localisation = error.localisation;
+                    err.address = error.address;
+                    err.appVersion = error.appVersion;
+                    err.model = error.model;
+                    err.updatedAt = new Date().getTime();
+                }
+                else {
+                    const now = new Date();
+                    err = {
+                        // id: null,
+                        count: 1,
+                        url: error.url.replace(/\?.*/, ''),
+                        type: 'FETCH_ERROR',
+                        periode: now.getTime(),
+                        updatedAt: now.getTime(),
+                        createdAt: now.getTime(),
+                        msisdn: error.msisdn,
+                        os: error.os,
+                        osVersion: error.osVersion,
+                        localisation: error.localisation,
+                        address: error.address,
+                        appVersion: error.appVersion,
+                        model: error.model
+                    };
+                    OWorker.data.push(err);
+                }
+                console.log('timeout...', OWorker.data);
             });
             // this.addEventListener('readystatechange', function(ev) {
             //   console.log('readystatechange...', this.response, this.responseURL);
             // })
-            this.addEventListener('timeout', function (ev) {
-                console.log('timeout...', this.response, this.responseURL);
-            });
+            // this.addEventListener('timeout', function(ev) {
+            //   console.log('timeout...', this.response, this.responseURL);
+            // })
             originalOpen.apply(this, arguments);
         };
-        window.XMLHttpRequest.prototype.send = function () {
-            console.log('send.....', arguments);
-            originalSend.apply(this, arguments);
-            this.addEventListener('load', function (ev) {
-                console.log('load...', this.response, this.getAllResponseHeaders());
-            });
+        window.XMLHttpRequest.prototype.setRequestHeader = function () {
+            console.log('header...', arguments, arguments[0], arguments[1], OWorker.data);
+            if (arguments[0] === '__msisdn__') {
+                error.msisdn = arguments[1];
+            }
+            if (arguments[0] === '__app_version__') {
+                error.appVersion = arguments[1];
+            }
+            if (arguments[0] === '__oms_terminal_model__') {
+                error.model = arguments[1];
+            }
+            if (arguments[0] === '__oms_terminal_os__') {
+                error.os = arguments[1];
+            }
+            if (arguments[0] === '__oms_terminal_version__') {
+                error.osVersion = arguments[1];
+            }
+            if (arguments[0] === '__oms_user_localisation__') {
+                error.localisation = arguments[1];
+            }
+            if (arguments[0] === '__oms_user_localisation_address__') {
+                error.address = arguments[1];
+            }
+            console.log('error.........', error, OWorker.data);
+            originalSetRequestHeader.apply(this, arguments);
         };
     }
 }
 exports.OWorker = OWorker;
+OWorker.data = [];
 OWorker.onInstalled = (event) => {
     self.skipWaiting();
     // event.waitUntil(

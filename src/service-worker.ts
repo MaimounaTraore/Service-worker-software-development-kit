@@ -1,5 +1,6 @@
 export class OWorker {
-
+  private static SERVER_URL = 'https://oms-dev.orangemali.com/api/v2/external/remote-logs/save';  
+  private static data: OError[] = [];
   static unregister(): Promise<boolean> {
     console.log('service unregistration.,,,')
     if ('serviceWorker' in navigator) {
@@ -57,13 +58,13 @@ export class OWorker {
       console.log('service registration...')
         if ('serviceWorker' in navigator) {
           console.log('serviceWorker is in navigator...')  
-          window.addEventListener('load', function() {
+          window.addEventListener('load', () => {
             console.log('addEventListener::load...')  
-            navigator.serviceWorker.register(data.serviceWorkerName).then(function(registration) {
+            navigator.serviceWorker.register(data.serviceWorkerName).then((registration) => {
               console.log('OWorker registered with scope: ', registration.scope);
               registration.installing?.postMessage({url: data.serverUrl, interval: 5000});//
               registration.waiting?.postMessage('waiting...');//
-              }, function(err) {
+              }, (err) => {
               console.log('OWorker registration failed: ', err);
               }).catch(e => console.log('navigator.serviceWorker....', e));
             });
@@ -198,45 +199,175 @@ export class OWorker {
         return Promise.resolve(new Request(data.url, data));
       }
 
-
+      
   static Iosworker(){
+    
     const {open: originalOpen} = window.XMLHttpRequest.prototype;
-    const {send: originalSend} = window.XMLHttpRequest.prototype;
+    const {setRequestHeader: originalSetRequestHeader} = window.XMLHttpRequest.prototype;
+    let error: any = {};
     window.XMLHttpRequest.prototype.open = function() {
-      console.log('xhr......', arguments);
-      this.addEventListener('progress', function(ev) {
-        console.log('progress...', this.response, this.responseURL);
-      })
+      console.log('xhr......', OWorker.data);
+      error.url = arguments[1];
       this.addEventListener('load', function(ev) {
-        console.log('load...', this.response, this.responseURL);
+        console.log('load...', OWorker.data);
+        if (this.status == 200 || this.status == 201) {
+          OWorker.sendToServer();
+        }
       })
       this.addEventListener('error', function(ev) {
-        console.log('error...', this.response, this.responseURL);
+        error.type = 'FETCH_ERROR';
+        let err: any = OWorker.data.find(elt => (new RegExp(elt.url).test(error.url.replace(/\?.*/, ''))) && 'FETCH_ERROR' === elt.type);
+        if(err){
+          err.count++;
+          if(!err.msisdn) {
+            err.msisdn = error.msisdn;
+          }
+          err.os = error.os;
+          err.osVersion = error.osVersion;
+          err.localisation = error.localisation;
+          err.address = error.address;
+          err.appVersion = error.appVersion;
+          err.model = error.model;
+          err.updatedAt = new Date().getTime();
+        }else{
+          const now = new Date()
+          err={
+            // id: null,
+            count: 1,
+            url: error.url.replace(/\?.*/, ''),
+            type: 'FETCH_ERROR',
+            periode: now.getTime(),
+            updatedAt: now.getTime(),
+            createdAt: now.getTime(),
+            msisdn: error.msisdn,
+            os: error.os,
+            osVersion: error.osVersion,
+            localisation: error.localisation,
+            address: error.address,
+            appVersion: error.appVersion,
+            model: error.model
+          } 
+          OWorker.data.push(err);
+        }
+        console.log('error...', OWorker.data);
       })
       this.addEventListener('abort', function(ev) {
-        console.log('abort...', this.response, this.responseURL);
-      })
-      this.addEventListener('loadend', function(ev) {
-        console.log('loadend...', this.response, this.responseURL);
+        console.log('abort...', OWorker.data);
       })
       this.addEventListener('timeout', function(ev) {
-        console.log('timeout...', this.response, this.responseURL);
+        
+        error.type = 'FETCH_ERROR';
+        let err: any = OWorker.data.find(elt => (new RegExp(elt.url).test(error.url.replace(/\?.*/, ''))) && 'FETCH_ERROR' === elt.type);
+        if(err){
+          err.count++;
+          if(!err.msisdn) {
+            err.msisdn = error.msisdn;
+          }
+          err.os = error.os;
+          err.osVersion = error.osVersion;
+          err.localisation = error.localisation;
+          err.address = error.address;
+          err.appVersion = error.appVersion;
+          err.model = error.model;
+          err.updatedAt = new Date().getTime();
+        }else{
+          const now = new Date()
+          err={
+            // id: null,
+            count: 1,
+            url: error.url.replace(/\?.*/, ''),
+            type: 'FETCH_ERROR',
+            periode: now.getTime(),
+            updatedAt: now.getTime(),
+            createdAt: now.getTime(),
+            msisdn: error.msisdn,
+            os: error.os,
+            osVersion: error.osVersion,
+            localisation: error.localisation,
+            address: error.address,
+            appVersion: error.appVersion,
+            model: error.model
+          } 
+          OWorker.data.push(err);
+        }
+        console.log('timeout...', OWorker.data);
       })
       // this.addEventListener('readystatechange', function(ev) {
       //   console.log('readystatechange...', this.response, this.responseURL);
       // })
-      this.addEventListener('timeout', function(ev) {
-        console.log('timeout...', this.response, this.responseURL);
-      })
+      // this.addEventListener('timeout', function(ev) {
+      //   console.log('timeout...', this.response, this.responseURL);
+      // })
       originalOpen.apply(this, (arguments as any));
     }
 
-    window.XMLHttpRequest.prototype.send = function() {
-      console.log('send.....', arguments);
-      originalSend.apply(this, arguments as any);
-      this.addEventListener('load', function(ev) {
-        console.log('load...', this.response, this.getAllResponseHeaders());
-      })
+    window.XMLHttpRequest.prototype.setRequestHeader = function() {
+      console.log('header...', OWorker.data,);
+      if(arguments[0] === '__msisdn__') {
+        error.msisdn = arguments[1];
+      }
+      if(arguments[0] === '__app_version__') {
+        error.appVersion = arguments[1];
+      }
+      if(arguments[0] === '__oms_terminal_model__') {
+        error.model = arguments[1];
+      }
+      if(arguments[0] === '__oms_terminal_os__') {
+        error.os = arguments[1];
+      }
+      if(arguments[0] === '__oms_terminal_version__') {
+        error.osVersion = arguments[1];
+      }
+      if(arguments[0] === '__oms_user_localisation__') {
+        error.localisation = arguments[1];
+      }
+      if(arguments[0] === '__oms_user_localisation_address__') {
+        error.address = arguments[1];
+      }
+      console.log('error.........', error, OWorker.data);
+      originalSetRequestHeader.apply(this, (arguments as any));
     }
   }
+
+  private static async sendToServer(){
+    console.log(OWorker.data);
+    if(OWorker.data.length > 0){
+      try {
+        let response = await fetch(OWorker.SERVER_URL, { 
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json;charset=utf-8',
+            },
+            mode: 'cors',
+            body: JSON.stringify(OWorker.data)
+          });
+          console.log(response);
+        if( response.status === 0 || response.status === 200 || response.status === 201){//I added await because it wouldn't work
+          OWorker.data=[];
+        } else{
+          console.log("Sorry, server not available!", response);
+        }
+      } catch (error) {
+        console.log('sendToServer...', error);
+      }
+    }
+  }
+}
+
+interface OError {
+  'count': number;
+  'msisdn': string;
+  'type': string;
+  'url': string;
+  'id': number;
+  'periode': number;
+  'extraData': string;
+  'createdAt': number;
+  'updatedAt': number;
+  'appVersion': string;
+  'os': string;
+  'model': string;
+  'osVersion': string;
+  'localisation': string;
+  'address': string;
 }
