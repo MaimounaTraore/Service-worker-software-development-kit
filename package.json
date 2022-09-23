@@ -6,19 +6,35 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run lint",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaimounaTraore/o-worker.git"
+  },
+  "keywords": ["Service worker","worker", "service"],
+
   "files": [
     "dist/**"
   ],
-  "author": "",
+  "author": "M-T",
   "license": "ISC",
   "dependencies": {
     "idb": "^7.0.2"
   },
   "devDependencies": {
+    "prettier": "^2.7.1",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.7.4"
   }
 }
