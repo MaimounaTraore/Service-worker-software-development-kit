@@ -98,6 +98,45 @@ class OWorker {
         addEventListener('install', OWorker.onInstalled);
         addEventListener('fetch', OWorker.onFetched);
     }
+    static Iosworker() {
+        const { open: originalOpen } = window.XMLHttpRequest.prototype;
+        const { send: originalSend } = window.XMLHttpRequest.prototype;
+        window.XMLHttpRequest.prototype.open = function () {
+            console.log('xhr......', arguments);
+            this.addEventListener('progress', function (ev) {
+                console.log('progress...', this.response, this.responseURL);
+            });
+            this.addEventListener('load', function (ev) {
+                console.log('load...', this.response, this.responseURL);
+            });
+            this.addEventListener('error', function (ev) {
+                console.log('error...', this.response, this.responseURL);
+            });
+            this.addEventListener('abort', function (ev) {
+                console.log('abort...', this.response, this.responseURL);
+            });
+            this.addEventListener('loadend', function (ev) {
+                console.log('loadend...', this.response, this.responseURL);
+            });
+            this.addEventListener('timeout', function (ev) {
+                console.log('timeout...', this.response, this.responseURL);
+            });
+            // this.addEventListener('readystatechange', function(ev) {
+            //   console.log('readystatechange...', this.response, this.responseURL);
+            // })
+            this.addEventListener('timeout', function (ev) {
+                console.log('timeout...', this.response, this.responseURL);
+            });
+            originalOpen.apply(this, arguments);
+        };
+        window.XMLHttpRequest.prototype.send = function () {
+            console.log('send.....', arguments);
+            originalSend.apply(this, arguments);
+            this.addEventListener('load', function (ev) {
+                console.log('load...', this.response, this.getAllResponseHeaders());
+            });
+        };
+    }
 }
 exports.OWorker = OWorker;
 OWorker.onInstalled = (event) => {
